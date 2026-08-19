@@ -1,0 +1,63 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt PyYAML
+
+      - name: Compile scripts
+        run: |
+          python -m py_compile \
+            scripts/prepare_media.py \
+            scripts/extract_video_frames.py \
+            scripts/render_style_pack.py \
+            scripts/validate_style_pack.py
+
+      - name: Validate Skill metadata
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          document = Path("SKILL.md").read_text(encoding="utf-8")
+          if not document.startswith("---\n"):
+              raise SystemExit("SKILL.md 缺少 YAML frontmatter")
+          _, frontmatter, body = document.split("---", 2)
+          metadata = yaml.safe_load(frontmatter)
+          if set(metadata) != {"name", "description"}:
+              raise SystemExit("SKILL.md frontmatter 只能包含 name 与 description")
+          if metadata["name"] != "extract-style-pack" or not body.strip():
+              raise SystemExit("SKILL.md 元数据或正文无效")
+          PY
+
+      - name: Validate evals and media environment
+        run: |
+          python -m json.tool evals/evals.json > /dev/null
+          python -X utf8 scripts/extract_video_frames.py --check

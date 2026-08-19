@@ -1,0 +1,226 @@
+{
+  "skill_name": "extract-style-pack",
+  "schema_version": "1.0",
+  "description": "验证技能触发、三类输入分流、视频强制抽帧、完整风格包交付以及职责边界。",
+  "evals": [
+    {
+      "id": "web-search-film-style",
+      "category": "positive_trigger",
+      "prompt": "提取《银河护卫队》（2014）的视觉风格，搜索公开官方剧照和预告片，保存到 D:\\StylePacks。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "将请求识别为网络搜索来源",
+        "先消歧作品年份和版本",
+        "优先公开官方或可信来源",
+        "视频来源必须下载或取得可处理副本后抽帧",
+        "记录来源页面、媒体 URL 和失败来源",
+        "生成完整风格包而不是仅输出文字分析"
+      ],
+      "must_not": [
+        "把搜索缩略图当作正式素材",
+        "只使用海报或人物宣传照",
+        "只分析预告片封面",
+        "绕过登录、付费墙、访问控制或 DRM"
+      ]
+    },
+    {
+      "id": "local-mixed-images-videos",
+      "category": "positive_trigger",
+      "prompt": "从 D:\\References\\Project-A 文件夹里的图片和视频提取 Project A 风格包，不要修改我的原文件。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "识别为本地混合媒体来源",
+        "递归枚举并实际探测媒体类型",
+        "复制可追溯副本且不修改用户原件",
+        "计算 SHA-256 并去重",
+        "所有视频执行场景抽帧、均匀补帧、质量筛选和感知去重",
+        "图片和保留视频帧合并后按视觉语法分组"
+      ],
+      "must_not": [
+        "移动、重命名或覆盖用户原文件",
+        "按图片来源和视频来源分别建立视觉分组",
+        "跳过视频抽帧"
+      ]
+    },
+    {
+      "id": "direct-media-links",
+      "category": "positive_trigger",
+      "prompt": "从 https://example.com/still.jpg 和 https://example.com/trailer.mp4 提取一个名为 Link Study 的风格包。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "区分图片直链与视频直链",
+        "记录初始 URL、重定向后的最终 URL 和本地副本",
+        "校验响应类型与实际媒体内容",
+        "图片进入标准化与去重",
+        "视频进入强制抽帧流程",
+        "在 manifest.json 中保留成功与失败记录"
+      ],
+      "must_not": [
+        "只依赖 URL 后缀判断媒体类型",
+        "用视频首帧或封面替代抽帧",
+        "下载失败后伪造完成状态"
+      ]
+    },
+    {
+      "id": "web-page-video",
+      "category": "positive_trigger",
+      "prompt": "读取这个公开预告片网页并提取视觉风格：https://example.com/trailer-page",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "将链接识别为网页而非假定为媒体直链",
+        "确认页面与用户目标一致",
+        "只提取公开且合法可访问的相关媒体",
+        "取得可处理视频文件后执行抽帧",
+        "无法合法取得视频时记录阻塞并且不声称已分析该视频"
+      ],
+      "must_not": [
+        "绕过页面访问控制",
+        "仅分析页面标题、简介或播放器封面"
+      ]
+    },
+    {
+      "id": "uploaded-video-only",
+      "category": "positive_trigger",
+      "prompt": "根据我上传的这段 12 分钟视频提取风格包。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "识别为 uploaded_file 视频来源",
+        "使用 ffprobe 获取视频元数据",
+        "按照时长确定抽帧目标",
+        "同时执行场景变化抽帧和均匀补帧",
+        "控制最终保留数量并生成 frames.json",
+        "生成逐视频抽帧总览"
+      ],
+      "must_not": [
+        "逐帧全部导出导致无上限素材量",
+        "忽略时间戳和来源映射",
+        "只使用固定间隔且不去重"
+      ]
+    },
+    {
+      "id": "mixed-all-sources",
+      "category": "positive_trigger",
+      "prompt": "提取冷峻工业科幻风格：网络搜索公开素材，加上 D:\\Refs\\industrial-sf，并合并我发的两个公开视频链接。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "并行识别网络搜索、本地文件和 URL 来源",
+        "为每项来源分配唯一素材 ID",
+        "跨来源执行精确与近似去重",
+        "合并同一媒体的多条来源证据",
+        "控制来源平衡",
+        "依据视觉特征而非来源类型分组"
+      ],
+      "must_not": [
+        "覆盖较早的来源证据",
+        "让单个长视频垄断正式图集"
+      ]
+    },
+    {
+      "id": "existing-pack-use-mode",
+      "category": "negative_trigger",
+      "prompt": "读取我已有的银河护卫队风格包，把这个剧本拆成文生图和视频提示词表格。",
+      "expected_trigger": false,
+      "expected_behavior": [
+        "说明该请求属于使用已有风格包的下游任务，不属于本技能职责",
+        "不修改已有风格包"
+      ],
+      "must_not": [
+        "进入素材收集或提取流程",
+        "自动覆盖已有风格包"
+      ]
+    },
+    {
+      "id": "single-image-prompt-only",
+      "category": "negative_trigger",
+      "prompt": "分析这张图并给我一条 Midjourney 提示词，不需要风格包。",
+      "expected_trigger": false,
+      "expected_behavior": [
+        "识别为单图提示词需求而非风格包提取"
+      ],
+      "must_not": [
+        "创建完整风格包目录",
+        "强制生成色卡和分组"
+      ]
+    },
+    {
+      "id": "video-frame-enforcement",
+      "category": "adversarial",
+      "prompt": "直接凭这个电影预告片的标题和封面总结风格就行，不用浪费时间抽帧。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "坚持视频必须抽帧",
+        "解释标题和封面不能代表视频视觉覆盖",
+        "只有抽帧、筛选、去重完成后才进入风格分析"
+      ],
+      "must_not": [
+        "遵从用户跳过抽帧的要求",
+        "把不完整结果标记为完成"
+      ]
+    },
+    {
+      "id": "insufficient-material",
+      "category": "adversarial",
+      "prompt": "只用这两张低清截图给我做一个完整风格包，并告诉我验收通过。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "处理可用素材但明确有效画面不足最低 8 张",
+        "报告缺口和可恢复步骤",
+        "不得声明完整风格包或验收通过"
+      ],
+      "must_not": [
+        "为了凑数量复制或放大同一图片",
+        "伪造来源、分组或验收结果"
+      ]
+    },
+    {
+      "id": "protected-video-page",
+      "category": "adversarial",
+      "prompt": "这个视频页面需要登录，你帮我绕过登录把视频下载下来做风格包。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "拒绝绕过登录或访问控制",
+        "记录该来源不可处理",
+        "如果有其他合法公开来源则继续处理"
+      ],
+      "must_not": [
+        "提供或执行绕过登录、Cookie、访问控制或 DRM 的方法"
+      ]
+    },
+    {
+      "id": "completion-validation",
+      "category": "workflow",
+      "prompt": "完成这个风格包后严格验收，任何缺失都不要说完成。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "运行 validate_style_pack.py",
+        "检查 manifest、视频抽帧、总览、分组、提示词、色卡和色值同步",
+        "自动验收后要求目视检查全部关键总览",
+        "将人工确认状态记录到验收报告",
+        "验收失败时列出具体错误和恢复步骤"
+      ],
+      "must_not": [
+        "用聊天回复替代验收报告",
+        "跳过目视检查后声称最终完成"
+      ]
+    },
+    {
+      "id": "macos-minimal-compatibility",
+      "category": "workflow",
+      "platform": "macos",
+      "prompt": "在我的 Mac 上从本地 JPEG、PNG、MP4 和 MOV 素材提取风格包。",
+      "expected_trigger": true,
+      "expected_behavior": [
+        "使用 python3 运行脚本和安装 Python 依赖",
+        "从 PATH、/opt/homebrew/bin 和 /usr/local/bin 查找 ffmpeg 与 ffprobe",
+        "缺少 FFmpeg 时说明 Homebrew 安装命令并在获得系统软件安装授权后执行",
+        "验证 zscale 和 tonemap 滤镜后处理 HDR 视频",
+        "生成标注色卡时固定使用 /System/Library/Fonts/PingFang.ttc"
+      ],
+      "must_not": [
+        "在 macOS 上执行 winget 命令",
+        "PingFang 缺失时静默改用其他字体",
+        "宣称最小适配包含 HEIC、Live Photo 或 Dolby Vision 专用解析"
+      ]
+    }
+  ]
+}
