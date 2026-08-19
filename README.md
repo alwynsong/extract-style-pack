@@ -25,6 +25,39 @@
 
 > 仅作 Skill 输出示例；源影像版权归原权利人所有。
 
+## 安装 Skill
+
+### 让 Agent 自动安装（推荐）
+
+将下面的内容发送给支持访问 GitHub 和安装 Skill 的 Agent：
+
+```text
+请从以下 GitHub 仓库安装 extract-style-pack Skill：
+
+https://github.com/alwynsong/extract-style-pack
+
+仓库根目录就是 Skill 目录，请安装为 extract-style-pack。
+安装后阅读 SKILL.md，并检查 Python、yt-dlp、FFmpeg 和 FFprobe；需要联网或系统权限时先向我申请。
+```
+
+安装完成后，通常需要在下一轮对话或新任务中使用。不同 Agent 的 Skill 安装目录和自动发现机制可能不同；如果 Agent 不支持从 GitHub 自动安装，请使用下面的手动方式。
+
+### 手动安装
+
+将仓库克隆到所用 Agent 配置的 Skill 目录：
+
+```bash
+git clone --depth 1 https://github.com/alwynsong/extract-style-pack.git <AGENT_SKILLS_DIR>/extract-style-pack
+```
+
+将 `<AGENT_SKILLS_DIR>` 替换为该 Agent 实际扫描 Skill 的目录，然后重新开启对话或任务，让 Agent 读取其中的 `SKILL.md`。
+
+更新已有安装：
+
+```bash
+git -C <AGENT_SKILLS_DIR>/extract-style-pack pull
+```
+
 ## 快速使用
 
 安装 Skill 并完成下方环境配置后，直接向 Agent 描述目标即可，通常不需要手动运行脚本。
@@ -32,13 +65,13 @@
 按作品名称提取：
 
 ```text
-提取诺兰《奥德赛》的视觉风格，优先使用官方公开视频抽帧。
+使用 extract-style-pack 提取诺兰《奥德赛》的视觉风格，优先使用官方公开视频抽帧。
 ```
 
 从上传视频提取：
 
 ```text
-提取我上传视频的视觉风格，选择代表性画面，并生成视觉分组、色卡、风格规则和提示词。
+使用 extract-style-pack 分析我上传的视频，选择代表性画面，并生成视觉分组、色卡、风格规则和提示词。
 ```
 
 还可以补充分析重点：
